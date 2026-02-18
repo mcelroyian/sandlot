@@ -1,6 +1,8 @@
 """MCP server that exposes a get_youtube_transcript tool."""
 
+import os
 import re
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -10,10 +12,12 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 
-mcp = FastMCP("youtube-transcript")
+# Initialize FastMCP with host and port for Fly.io deployment
+port = int(os.getenv("PORT", "8080"))
+mcp = FastMCP("youtube-transcript", host="0.0.0.0", port=port)
 
 
-def extract_video_id(url: str) -> str | None:
+def extract_video_id(url: str) -> Optional[str]:
     """Extract a YouTube video ID from various URL formats or a bare ID."""
     patterns = [
         r"(?:youtube\.com/watch\?.*v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/|youtube\.com/shorts/)([a-zA-Z0-9_-]{11})",
@@ -51,7 +55,9 @@ def get_youtube_transcript(url: str, include_timestamps: bool = False) -> str:
         return f"Error: Could not extract a video ID from the provided URL: {url}"
 
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        api = YouTubeTranscriptApi()
+        transcript_obj = api.fetch(video_id)
+        transcript_list = transcript_obj.to_raw_data()
     except TranscriptsDisabled:
         return f"Error: Transcripts are disabled for video {video_id}."
     except NoTranscriptFound:
@@ -74,4 +80,6 @@ def get_youtube_transcript(url: str, include_timestamps: bool = False) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    # Use streamable-http for Fly.io deployment, stdio for local testing
+    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+    mcp.run(transport=transport)

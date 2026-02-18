@@ -14,6 +14,32 @@ pip install -r requirements.txt
 python server.py
 ```
 
+## Testing
+
+### Quick Function Testing (Local - Python 3.8+)
+Test the library and function logic locally:
+```bash
+cd tools/youtube-transcript
+source venv/bin/activate  # Uses Python 3.8 venv
+python test_transcript.py
+python test_mcp_function.py
+```
+
+### Full MCP Server Testing (Docker - Recommended before deploy)
+Test the complete MCP server in Docker (matches production environment):
+```bash
+cd tools/youtube-transcript
+docker build -t youtube-transcript .
+docker run --rm youtube-transcript python test_server_startup.py
+```
+
+This validates:
+- All imports work correctly
+- MCP server initializes without errors
+- Transcript fetching works end-to-end
+
+**Run this before every deployment** to catch issues early!
+
 ## Deployment
 
 Deployed automatically to Fly.io via GitHub Actions on push to `main`.
